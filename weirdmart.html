@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WEIRDMART — buy the strange</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #080808;
+  --bg2:     #101010;
+  --bg3:     #181818;
+  --border:  #2a2a2a;
+  --accent:  #c8ff00;
+  --red:     #ff3c00;
+  --cyan:    #00f0ff;
+  --text:    #e8e8e8;
+  --muted:   #666;
+  --hh:      58px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Space Mono',monospace;
+  overflow-x:hidden;cursor:none;min-height:100vh;
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* CURSOR */
+#cDot,#cRing{position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);border-radius:50%;}
+#cDot{width:8px;height:8px;background:var(--accent);mix-blend-mode:difference;}
+#cRing{width:34px;height:34px;border:1.5px solid var(--accent);opacity:.7;transition:width .2s,height .2s,border-color .2s;}
+
+/* GLITCH */
+@keyframes gc1{
+  0%{clip-path:inset(5% 0 88% 0);transform:translate(-4px,0)}
+  33%{clip-path:inset(45% 0 40% 0);transform:translate(4px,0)}
+  66%{clip-path:inset(78% 0 8% 0);transform:translate(-2px,0)}
+  100%{clip-path:inset(5% 0 88% 0);transform:translate(0,0)}
+}
+@keyframes gc2{
+  0%{clip-path:inset(55% 0 30% 0);transform:translate(5px,0);color:var(--cyan)}
+  50%{clip-path:inset(20% 0 65% 0);transform:translate(-4px,0);color:var(--red)}
+  100%{clip-path:inset(55% 0 30% 0);transform:translate(0,0);color:var(--cyan)}
+}
+.glitch{position:relative;display:inline-block;}
+.glitch::before,.glitch::after{content:attr(data-t);position:absolute;inset:0;font:inherit;letter-spacing:inherit;color:var(--accent);opacity:0;}
+.glitch:hover::before{opacity:1;color:var(--red);animation:gc1 .45s steps(1) infinite;}
+.glitch:hover::after{opacity:1;animation:gc2 .45s steps(1) .1s infinite;}
+
+/* TICKER */
+.ticker{background:var(--accent);color:#000;font-family:'Bebas Neue',cursive;font-size:.95rem;letter-spacing:3px;padding:6px 0;overflow:hidden;white-space:nowrap;user-select:none;}
+.ticker-track{display:flex;width:max-content;animation:tick 30s linear infinite;}
+.ticker-track span{padding:0 60px;}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* HEADER */
+header{
+  position:sticky;top:0;z-index:200;
+  background:rgba(8,8,8,.97);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  height:var(--hh);padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+}
+.logo{font-family:'Bebas Neue',cursive;font-size:2rem;letter-spacing:4px;color:var(--accent);text-shadow:3px 3px 0 var(--red);white-space:nowrap;line-height:1;flex-shrink:0;}
+.logo sup{font-size:.6rem;color:var(--muted);letter-spacing:1px;text-shadow:none;vertical-align:super;}
+
+/* search */
+.sw{position:relative;}
+.sw input{
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);font-family:'Space Mono',monospace;font-size:.75rem;
+  padding:7px 10px 7px 28px;width:190px;outline:none;
+  transition:border-color .18s,width .25s;
+}
+.sw input:focus{border-color:var(--accent);width:230px;}
+.sw input::placeholder{color:var(--muted);}
+.sw i{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.75rem;font-style:normal;pointer-events:none;}
+
+/* FILTER BAR */
+.fb{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:12px 24px;border-bottom:1px solid var(--border);
+  background:var(--bg2);
+  position:sticky;top:var(--hh);z-index:150;
+}
+.fl{font-family:'VT323',monospace;font-size:.95rem;color:var(--muted);letter-spacing:2px;flex-shrink:0;}
+.pill{
+  font-family:'Bebas Neue',cursive;font-size:.85rem;letter-spacing:2px;
+  padding:4px 13px;border:1px solid var(--border);
+  background:none;color:var(--muted);cursor:none;transition:all .16s;white-space:nowrap;
+}
+.pill:hover{border-color:var(--accent);color:var(--accent);}
+.pill.on{background:var(--accent);color:#000;border-color:var(--accent);}
+.fdiv{width:1px;height:20px;background:var(--border);flex-shrink:0;}
+.srt{
+  font-family:'Bebas Neue',cursive;font-size:.85rem;letter-spacing:2px;
+  padding:4px 12px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--muted);cursor:none;outline:none;
+  -webkit-appearance:none;appearance:none;transition:border-color .16s,color .16s;
+}
+.srt:hover,.srt:focus{border-color:var(--accent);color:var(--accent);}
+.rc{margin-left:auto;font-family:'VT323',monospace;font-size:1.1rem;color:var(--muted);}
+
+/* GRID */
+.gw{padding:20px 20px 60px;}
+.pg{columns:5 220px;gap:16px;}
+.nores{text-align:center;padding:80px 20px;font-family:'VT323',monospace;font-size:2rem;color:var(--border);letter-spacing:3px;}
+
+/* CARD */
+.card{
+  break-inside:avoid;margin-bottom:16px;
+  background:var(--bg2);border:1px solid var(--border);
+  overflow:visible;cursor:none;position:relative;
+  transition:transform .28s cubic-bezier(.22,.68,0,1.2),border-color .2s,box-shadow .28s;
+}
+.card:hover{transform:translateY(-8px) scale(1.02);border-color:var(--accent);box-shadow:0 14px 32px rgba(200,255,0,.14);}
+.card-img{width:100%;display:block;object-fit:cover;background:var(--bg3);transition:filter .3s;}
+.card-ph{width:100%;display:flex;align-items:center;justify-content:center;font-size:4rem;background:var(--bg3);}
+.card:hover .card-img{filter:brightness(1.07);}
+.cbadge{position:absolute;top:10px;left:10px;font-family:'VT323',monospace;font-size:.8rem;letter-spacing:1px;padding:3px 8px;text-transform:uppercase;background:var(--bg);border:1px solid var(--border);color:var(--cyan);}
+.cbody{padding:12px;position:relative;}
+.ctype{font-family:'VT323',monospace;font-size:.8rem;color:var(--cyan);text-transform:uppercase;letter-spacing:1px;}
+.cname{font-size:.84rem;font-weight:700;margin:4px 0 10px;line-height:1.35;}
+.crow{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.cprice{font-family:'Bebas Neue',cursive;font-size:1.3rem;color:var(--accent);letter-spacing:1px;}
+.csrc{font-size:.67rem;color:var(--muted);}
+.cacts{display:flex;gap:1px;margin-top:10px;max-height:0;overflow:hidden;transition:max-height .22s ease;}
+.card:hover .cacts{max-height:44px;}
+.bv,.bs{flex:1;border:none;padding:8px 0;font-family:'Bebas Neue',cursive;font-size:.82rem;letter-spacing:2px;cursor:none;transition:background .14s,color .14s;}
+.bv{background:var(--accent);color:#000;}
+.bv:hover{background:#deff1a;}
+.bs{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.bs:hover{background:var(--border);color:var(--accent);}
+
+/* SHARE POPUP */
+.spop{
+  position:absolute;bottom:calc(100% + 6px);right:0;
+  background:var(--bg3);border:1px solid var(--border);
+  padding:5px;display:flex;flex-direction:column;gap:3px;
+  z-index:400;min-width:155px;
+  opacity:0;pointer-events:none;
+  transform:translateY(6px);
+  transition:opacity .14s,transform .14s;
+}
+.spop.open{opacity:1;pointer-events:all;transform:translateY(0);}
+.sopt{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px;font-size:.72rem;
+  color:var(--text);background:none;border:none;cursor:none;
+  width:100%;text-align:left;font-family:'Space Mono',monospace;
+  transition:background .1s,color .1s;
+}
+.sopt:hover{background:var(--bg2);color:var(--accent);}
+.sopt .ico{font-size:.95rem;width:16px;text-align:center;}
+
+/* TOAST */
+.tshelf{position:fixed;bottom:20px;right:20px;z-index:9995;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.t{background:var(--bg3);border:1px solid var(--accent);color:var(--accent);font-family:'VT323',monospace;font-size:1rem;letter-spacing:1px;padding:8px 14px;opacity:0;transform:translateX(20px);transition:opacity .16s,transform .16s;}
+.t.show{opacity:1;transform:translateX(0);}
+
+/* LOADING STATE */
+.loading-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:80px 20px;gap:16px;
+}
+.loading-bar{
+  width:200px;height:2px;background:var(--border);overflow:hidden;
+}
+.loading-bar-fill{
+  height:100%;background:var(--accent);
+  animation:loadfill 1.2s ease-in-out infinite;
+}
+@keyframes loadfill{
+  0%{width:0%;margin-left:0}
+  50%{width:60%;margin-left:20%}
+  100%{width:0%;margin-left:100%}
+}
+.loading-txt{font-family:'VT323',monospace;font-size:1.2rem;color:var(--muted);letter-spacing:3px;}
+
+/* ERROR STATE */
+.err-state{
+  text-align:center;padding:80px 20px;
+  font-family:'VT323',monospace;font-size:1.3rem;
+  color:var(--red);letter-spacing:2px;line-height:2;
+}
+.err-state span{color:var(--muted);font-size:1rem;}
+
+footer{border-top:1px solid var(--border);padding:16px 24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:.7rem;color:var(--muted);}
+
+@media(max-width:768px){
+  .pg{columns:2 160px;}
+  .fl{display:none;}
+  header{padding:0 14px;}
+  .sw input{width:140px;}
+  .sw input:focus{width:160px;}
+}
+@media(max-width:480px){.pg{columns:1 100%;}.rc{display:none;}}
+</style>
+</head>
+<body>
+
+<div id="cDot"></div>
+<div id="cRing"></div>
+<div class="tshelf" id="ts"></div>
+
+<header>
+  <div class="logo glitch" data-t="WEIRDMART">WEIRDMART<sup>// affiliate</sup></div>
+  <div class="sw">
+    <i>⌕</i>
+    <input type="text" id="sb" placeholder="search weird things…">
+  </div>
+</header>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span>★ AFFILIATE LINKS — WE EARN A SMALL CUT &nbsp;•&nbsp; ALL PRODUCTS HANDPICKED &nbsp;•&nbsp; NEW DROPS WEEKLY &nbsp;•&nbsp; BUY THE STRANGE &nbsp;•&nbsp; NOT RESPONSIBLE FOR YOUR CHOICES &nbsp;•&nbsp; FREE SHIPPING OVER $50 ON SELECT ITEMS</span>
+    <span>★ AFFILIATE LINKS — WE EARN A SMALL CUT &nbsp;•&nbsp; ALL PRODUCTS HANDPICKED &nbsp;•&nbsp; NEW DROPS WEEKLY &nbsp;•&nbsp; BUY THE STRANGE &nbsp;•&nbsp; NOT RESPONSIBLE FOR YOUR CHOICES &nbsp;•&nbsp; FREE SHIPPING OVER $50 ON SELECT ITEMS</span>
+  </div>
+</div>
+
+<div class="fb" id="fb">
+  <span class="fl">TYPE//</span>
+  <div id="typePills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+  <div class="fdiv"></div>
+  <span class="fl">SORT//</span>
+  <select class="srt" id="sortSel">
+    <option value="default">DEFAULT</option>
+    <option value="newest">NEWEST FIRST</option>
+    <option value="asc">PRICE ↑ LOW→HIGH</option>
+    <option value="desc">PRICE ↓ HIGH→LOW</option>
+  </select>
+  <div class="fdiv"></div>
+  <span class="fl">SOURCE//</span>
+  <div id="srcPills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+  <div class="fdiv"></div>
+  <span class="fl">UNDER//</span>
+  <button class="pill" data-max="25">$25</button>
+  <button class="pill" data-max="50">$50</button>
+  <button class="pill" data-max="100">$100</button>
+  <span class="rc" id="rc">[0 ITEMS]</span>
+</div>
+
+<div class="gw">
+  <div class="pg" id="pg"></div>
+  <div class="nores" id="nr" style="display:none">// NO WEIRD STUFF FOUND //</div>
+</div>
+
+<footer>
+  <div>WEIRDMART — curated strange finds</div>
+  <div>all links are affiliate &nbsp;•&nbsp; we earn when you buy</div>
+  <div>made with pure chaos ★</div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   WEIRDMART — SUPABASE CONFIG
+   Replace these two values with your own from Supabase.
+   Instructions: see README or admin panel.
+═══════════════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://oiijtblwoqibhjcuijpn.supabase.co';       // e.g. https://xyzxyz.supabase.co
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9paWp0Ymx3b3FpYmhqY3VpanBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NTc2ODUsImV4cCI6MjA5MDQzMzY4NX0.cTfjygKIZi9I_ybEALmzkltd1Zef9zZJ_tnuu_VS4Ro'; // long string from Supabase dashboard
+
+/* ═══════════════════════════════════════════════════════
+   don't touch below
+═══════════════════════════════════════════════════════ */
+
+let PRODUCTS = [];
+
+async function fetchProducts() {
+  const grid = document.getElementById('pg');
+  const nr = document.getElementById('nr');
+
+  // show loading
+  grid.innerHTML = `
+    <div class="loading-state" style="grid-column:1/-1;width:100%">
+      <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+      <div class="loading-txt">// FETCHING WEIRD STUFF //</div>
+    </div>`;
+
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/products?select=*&order=date.desc`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        }
+      }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    PRODUCTS = await res.json();
+    buildPills();
+    buildSrcPills();
+    render();
+  } catch (err) {
+    grid.innerHTML = '';
+    nr.style.display = 'none';
+    grid.insertAdjacentHTML('afterend', `
+      <div class="err-state">
+        // FAILED TO LOAD PRODUCTS //<br>
+        <span>${err.message}</span><br>
+        <span style="font-size:.8rem;color:var(--border)">Check your Supabase URL and key in weirdmart.html</span>
+      </div>`);
+    console.error('Supabase fetch error:', err);
+  }
+}
+
+// CURSOR
+const cD=document.getElementById('cDot'), cR=document.getElementById('cRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cD.style.cssText+=`;left:${mx}px;top:${my}px`});
+(function af(){rx+=(mx-rx)*.13;ry+=(my-ry)*.13;cR.style.left=rx+'px';cR.style.top=ry+'px';requestAnimationFrame(af)})();
+document.addEventListener('mouseover',e=>{
+  const h=e.target.closest('a,button,.card,input,select');
+  cR.style.width=cR.style.height=h?'52px':'34px';
+  cR.style.borderColor=h?'var(--red)':'var(--accent)';
+});
+
+// TOAST
+function toast(m){
+  const t=document.createElement('div');t.className='t';t.textContent=m;
+  document.getElementById('ts').appendChild(t);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('show')));
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),250)},2000);
+}
+
+// STATE
+let aType='all',aMax=null,aSort='default',aTerm='',aSrc='all';
+
+// TYPE PILLS
+function buildPills(){
+  const types=['all',...new Set(PRODUCTS.map(p=>p.type))];
+  const wrap=document.getElementById('typePills');
+  wrap.innerHTML='';
+  types.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='pill'+(t==='all'?' on':'');
+    b.textContent=t==='all'?'ALL':t.toUpperCase();
+    b.dataset.type=t;
+    b.addEventListener('click',()=>{
+      aType=t;
+      document.querySelectorAll('[data-type]').forEach(x=>x.classList.toggle('on',x.dataset.type===t));
+      render();
+    });
+    wrap.appendChild(b);
+  });
+}
+
+// SOURCE PILLS
+function buildSrcPills(){
+  const sources=['all',...new Set(PRODUCTS.map(p=>p.source))];
+  const wrap=document.getElementById('srcPills');
+  wrap.innerHTML='';
+  sources.forEach(s=>{
+    const b=document.createElement('button');
+    b.className='pill'+(s==='all'?' on':'');
+    b.textContent=s==='all'?'ALL':s.toUpperCase();
+    b.dataset.src=s;
+    b.addEventListener('click',()=>{
+      aSrc=s;
+      document.querySelectorAll('[data-src]').forEach(x=>x.classList.toggle('on',x.dataset.src===s));
+      render();
+    });
+    wrap.appendChild(b);
+  });
+}
+
+// PRICE FILTER
+document.querySelectorAll('[data-max]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const v=+b.dataset.max;
+    if(aMax===v){aMax=null;b.classList.remove('on');}
+    else{aMax=v;document.querySelectorAll('[data-max]').forEach(x=>x.classList.remove('on'));b.classList.add('on');}
+    render();
+  });
+});
+
+document.getElementById('sortSel').addEventListener('change',e=>{aSort=e.target.value;render();});
+document.getElementById('sb').addEventListener('input',e=>{aTerm=e.target.value.toLowerCase().trim();render();});
+
+// SHARE MENU
+function shareMenu(item,card){
+  document.querySelectorAll('.spop.open').forEach(p=>p.classList.remove('open'));
+  let pop=card.querySelector('.spop');
+  if(pop){pop.classList.add('open');return;}
+  pop=document.createElement('div');pop.className='spop';
+  const ops=[
+    {ico:'🔗',txt:'Copy Link',   fn:()=>{navigator.clipboard.writeText(item.link).then(()=>toast('✓ Link copied!'))}},
+    {ico:'💬',txt:'WhatsApp',    fn:()=>{window.open(`https://wa.me/?text=${encodeURIComponent(item.name+' — '+item.link)}`,'_blank')}},
+    {ico:'✖', txt:'Post on X',   fn:()=>{window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('Check this: '+item.name)}&url=${encodeURIComponent(item.link)}`,'_blank')}},
+    {ico:'📤',txt:'Share…',      fn:()=>{navigator.share?navigator.share({title:item.name,url:item.link}).catch(()=>{}):toast('// Not supported //')}},
+  ];
+  ops.forEach(o=>{
+    const b=document.createElement('button');b.className='sopt';
+    b.innerHTML=`<span class="ico">${o.ico}</span>${o.txt}`;
+    b.addEventListener('click',e=>{e.stopPropagation();o.fn();pop.classList.remove('open');});
+    pop.appendChild(b);
+  });
+  card.querySelector('.cbody').appendChild(pop);
+  requestAnimationFrame(()=>pop.classList.add('open'));
+  setTimeout(()=>{
+    document.addEventListener('click',function cl(e){
+      if(!pop.contains(e.target)){pop.classList.remove('open');document.removeEventListener('click',cl);}
+    });
+  },0);
+}
+
+// CREATE CARD
+function mkCard(item){
+  const c=document.createElement('div');c.className='card';
+  const imgEl=item.img
+    ?`<img class="card-img" src="${item.img}" alt="${item.name}" loading="lazy" style="height:${item.img_height||220}px" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="card-ph" style="height:${item.img_height||220}px;display:none">${item.emoji||'📦'}</div>`
+    :`<div class="card-ph" style="height:${item.img_height||220}px">${item.emoji||'📦'}</div>`;
+  const bd=item.badge?`<div class="cbadge">${item.badge}</div>`:'';
+  c.innerHTML=`${imgEl}${bd}<div class="cbody"><div class="ctype">${item.type}</div><div class="cname">${item.name}</div><div class="crow"><div class="cprice">$${item.price}</div><div class="csrc">${item.source}</div></div><div class="cacts"><button class="bv">VISIT →</button><button class="bs">⤴ SHARE</button></div></div>`;
+  c.querySelector('.bv').addEventListener('click',e=>{e.stopPropagation();window.open(item.link,'_blank','noopener');});
+  c.querySelector('.bs').addEventListener('click',e=>{e.stopPropagation();shareMenu(item,c);});
+  c.addEventListener('click',()=>window.open(item.link,'_blank','noopener'));
+  return c;
+}
+
+// RENDER
+function render(){
+  let list=[...PRODUCTS];
+  if(aTerm) list=list.filter(p=>p.name.toLowerCase().includes(aTerm)||p.type.includes(aTerm)||p.source.toLowerCase().includes(aTerm));
+  if(aType!=='all') list=list.filter(p=>p.type===aType);
+  if(aSrc!=='all') list=list.filter(p=>p.source===aSrc);
+  if(aMax) list=list.filter(p=>p.price<aMax);
+  if(aSort==='newest') list.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(aSort==='asc') list.sort((a,b)=>a.price-b.price);
+  if(aSort==='desc') list.sort((a,b)=>b.price-a.price);
+
+  const g=document.getElementById('pg'),nr=document.getElementById('nr');
+  g.innerHTML='';
+  nr.style.display=list.length?'none':'block';
+  list.forEach(item=>g.appendChild(mkCard(item)));
+  document.getElementById('rc').textContent=`[${list.length} ITEMS]`;
+}
+
+// BOOT
+fetchProducts();
+</script>
+</body>
+</html>
