@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WEIRDMART — ADMIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#080808;--bg2:#101010;--bg3:#181818;
+  --border:#2a2a2a;--accent:#c8ff00;--red:#ff3c00;
+  --cyan:#00f0ff;--text:#e8e8e8;--muted:#666;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;min-height:100vh;cursor:none;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");}
+
+/* CURSOR */
+#cDot,#cRing{position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);border-radius:50%;}
+#cDot{width:8px;height:8px;background:var(--accent);mix-blend-mode:difference;}
+#cRing{width:34px;height:34px;border:1.5px solid var(--accent);opacity:.7;transition:width .2s,height .2s,border-color .2s;}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;z-index:8000;background:var(--bg);display:flex;align-items:center;justify-content:center;}
+.login-box{border:1px solid var(--border);background:var(--bg2);padding:40px;width:380px;display:flex;flex-direction:column;gap:20px;}
+.login-logo{font-family:'Bebas Neue',cursive;font-size:1.6rem;letter-spacing:4px;color:var(--accent);text-shadow:2px 2px 0 var(--red);text-align:center;}
+.login-logo span{display:block;font-family:'VT323',monospace;font-size:1rem;color:var(--muted);letter-spacing:3px;text-shadow:none;margin-top:2px;}
+.login-err{font-family:'VT323',monospace;font-size:.95rem;color:var(--red);letter-spacing:1px;text-align:center;display:none;padding:8px;border:1px solid var(--red);background:rgba(255,60,0,.05);}
+.login-note{font-family:'VT323',monospace;font-size:.78rem;color:var(--muted);letter-spacing:1px;text-align:center;}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:200;background:rgba(8,8,8,.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);height:58px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-family:'Bebas Neue',cursive;font-size:1.8rem;letter-spacing:4px;color:var(--accent);text-shadow:3px 3px 0 var(--red);line-height:1;}
+.logo sup{font-size:.55rem;color:var(--red);letter-spacing:2px;text-shadow:none;vertical-align:super;}
+.hright{display:flex;align-items:center;gap:12px;}
+.badge-admin{font-family:'VT323',monospace;font-size:.9rem;letter-spacing:2px;color:var(--red);border:1px solid var(--red);padding:3px 10px;}
+.admin-email{font-size:.65rem;color:var(--muted);}
+.btn-logout{font-family:'Bebas Neue',cursive;font-size:.8rem;letter-spacing:2px;padding:5px 14px;border:1px solid var(--border);background:none;color:var(--muted);cursor:none;transition:all .15s;}
+.btn-logout:hover{border-color:var(--red);color:var(--red);}
+
+/* LAYOUT */
+.wrap{display:grid;grid-template-columns:400px 1fr;gap:0;min-height:calc(100vh - 58px);}
+
+/* FORM PANEL */
+.form-panel{border-right:1px solid var(--border);padding:24px;background:var(--bg2);position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;display:flex;flex-direction:column;gap:18px;}
+.panel-title{font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:12px;}
+.panel-title span{font-family:'VT323',monospace;font-size:.85rem;color:var(--muted);letter-spacing:2px;display:block;margin-top:2px;}
+
+/* FORM ELEMENTS */
+.fgroup{display:flex;flex-direction:column;gap:6px;}
+.fgroup label{font-family:'VT323',monospace;font-size:.85rem;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;}
+.fgroup input,.fgroup select,.fgroup textarea{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Space Mono',monospace;font-size:.75rem;padding:9px 12px;outline:none;width:100%;transition:border-color .15s;-webkit-appearance:none;appearance:none;}
+.fgroup input:focus,.fgroup select:focus,.fgroup textarea:focus{border-color:var(--accent);}
+.fgroup input::placeholder,.fgroup textarea::placeholder{color:var(--muted);}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fhint{font-size:.65rem;color:var(--muted);margin-top:2px;}
+
+/* CUSTOM STORE */
+.custom-store-wrap{display:none;margin-top:8px;flex-direction:column;gap:6px;}
+.custom-store-wrap.show{display:flex;}
+
+/* EMOJI PICKER */
+.emoji-grid{display:flex;flex-wrap:wrap;gap:4px;background:var(--bg3);border:1px solid var(--border);padding:8px;max-height:100px;overflow-y:auto;}
+.emoji-btn{font-size:1.2rem;padding:4px 6px;background:none;border:1px solid transparent;cursor:none;border-radius:2px;transition:all .1s;line-height:1;}
+.emoji-btn:hover{border-color:var(--border);background:var(--bg2);}
+.emoji-btn.picked{border-color:var(--accent);background:rgba(200,255,0,.08);}
+
+/* BUTTONS */
+.btn-submit{font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:3px;padding:12px 0;border:none;background:var(--accent);color:#000;cursor:none;width:100%;transition:background .15s,transform .1s;margin-top:4px;}
+.btn-submit:hover{background:#deff1a;transform:translateY(-1px);}
+.btn-submit:disabled{background:var(--border);color:var(--muted);transform:none;}
+.btn-clear{font-family:'Bebas Neue',cursive;font-size:.8rem;letter-spacing:2px;padding:9px 0;border:1px solid var(--border);background:var(--bg3);color:var(--muted);cursor:none;width:100%;transition:all .13s;}
+.btn-clear:hover{border-color:var(--text);color:var(--text);}
+
+/* STATUS */
+.status{font-family:'VT323',monospace;font-size:1rem;letter-spacing:1px;padding:10px;text-align:center;display:none;border:1px solid;}
+.status.ok{color:var(--accent);border-color:var(--accent);background:rgba(200,255,0,.05);}
+.status.err{color:var(--red);border-color:var(--red);background:rgba(255,60,0,.05);}
+
+/* PREVIEW */
+.preview-wrap{border:1px solid var(--border);background:var(--bg3);padding:14px;}
+.preview-title{font-family:'VT323',monospace;font-size:.85rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.prev-card{background:var(--bg2);border:1px solid var(--border);overflow:hidden;max-width:200px;margin:0 auto;}
+.prev-ph{width:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:var(--bg3);height:120px;}
+.prev-body{padding:10px;}
+.prev-type{font-family:'VT323',monospace;font-size:.75rem;color:var(--cyan);letter-spacing:1px;}
+.prev-name{font-size:.78rem;font-weight:700;margin:3px 0 8px;line-height:1.3;}
+.prev-row{display:flex;justify-content:space-between;align-items:center;}
+.prev-price{font-family:'Bebas Neue',cursive;font-size:1.1rem;color:var(--accent);}
+.prev-src{font-size:.62rem;color:var(--muted);}
+
+/* LIST PANEL */
+.list-panel{padding:24px;background:var(--bg);overflow-y:auto;}
+.list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:12px;}
+.list-title{font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;color:var(--accent);}
+.list-count{font-family:'VT323',monospace;font-size:1rem;color:var(--muted);}
+.list-search{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Space Mono',monospace;font-size:.72rem;padding:6px 10px;outline:none;width:200px;transition:border-color .15s;}
+.list-search:focus{border-color:var(--accent);}
+.list-search::placeholder{color:var(--muted);}
+
+/* TABLE */
+.ptable{width:100%;border-collapse:collapse;}
+.ptable th{font-family:'VT323',monospace;font-size:.85rem;letter-spacing:2px;color:var(--muted);text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.ptable td{font-size:.72rem;padding:10px 12px;border-bottom:1px solid rgba(42,42,42,.5);vertical-align:middle;}
+.ptable tr:hover td{background:var(--bg2);}
+.td-name{font-weight:700;max-width:180px;}
+.td-price{font-family:'Bebas Neue',cursive;font-size:1rem;color:var(--accent);}
+.td-type{font-family:'VT323',monospace;font-size:.8rem;color:var(--cyan);letter-spacing:1px;text-transform:uppercase;}
+.td-src{color:var(--muted);font-size:.68rem;}
+.td-badge{font-family:'VT323',monospace;font-size:.75rem;color:var(--cyan);border:1px solid var(--border);padding:2px 6px;display:inline-block;}
+.td-emoji{font-size:1.3rem;line-height:1;}
+.btn-del{font-family:'Bebas Neue',cursive;font-size:.72rem;letter-spacing:1px;padding:4px 10px;border:1px solid var(--border);background:none;color:var(--muted);cursor:none;transition:all .13s;white-space:nowrap;}
+.btn-del:hover{border-color:var(--red);color:var(--red);}
+.empty-list{text-align:center;padding:60px 20px;font-family:'VT323',monospace;font-size:1.5rem;color:var(--border);letter-spacing:3px;}
+.loading-row td{text-align:center;padding:40px;font-family:'VT323',monospace;font-size:1.1rem;color:var(--muted);letter-spacing:3px;}
+
+/* CONFIRM MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:7000;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--bg2);border:1px solid var(--red);padding:32px;width:320px;display:flex;flex-direction:column;gap:16px;transform:translateY(10px);transition:transform .2s;}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-title{font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:3px;color:var(--red);}
+.modal-body{font-size:.75rem;color:var(--muted);line-height:1.6;}
+.modal-actions{display:flex;gap:8px;}
+.btn-cancel,.btn-confirm{flex:1;font-family:'Bebas Neue',cursive;font-size:.85rem;letter-spacing:2px;padding:9px 0;border:1px solid;cursor:none;transition:all .13s;}
+.btn-cancel{border-color:var(--border);color:var(--muted);background:none;}
+.btn-cancel:hover{border-color:var(--text);color:var(--text);}
+.btn-confirm{border-color:var(--red);color:var(--red);background:none;}
+.btn-confirm:hover{background:var(--red);color:#000;}
+
+/* TOAST */
+.tshelf{position:fixed;bottom:20px;right:20px;z-index:9995;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.t{background:var(--bg3);border:1px solid var(--accent);color:var(--accent);font-family:'VT323',monospace;font-size:1rem;letter-spacing:1px;padding:8px 14px;opacity:0;transform:translateX(20px);transition:opacity .16s,transform .16s;}
+.t.show{opacity:1;transform:translateX(0);}
+
+@media(max-width:900px){.wrap{grid-template-columns:1fr;}.form-panel{position:static;height:auto;}}
+</style>
+</head>
+<body>
+
+<div id="cDot"></div><div id="cRing"></div>
+<div class="tshelf" id="ts"></div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">WEIRDMART<span>// ADMIN ACCESS //</span></div>
+    <div class="fgroup">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email">
+    </div>
+    <div class="fgroup">
+      <label>Password</label>
+      <input type="password" id="loginPw" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="login-err" id="loginErr">// ACCESS DENIED //</div>
+    <button class="btn-submit" id="loginBtn" onclick="doLogin()">ENTER ADMIN →</button>
+    <div class="login-note">// credentials managed in Supabase Auth — not in this file //</div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-overlay" id="delModal">
+  <div class="modal">
+    <div class="modal-title">// DELETE PRODUCT //</div>
+    <div class="modal-body" id="delModalBody">Are you sure? This cannot be undone.</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">CANCEL</button>
+      <button class="btn-confirm" id="delConfirmBtn">DELETE</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">WEIRDMART<sup>// admin</sup></div>
+  <div class="hright">
+    <div class="badge-admin">⚠ ADMIN MODE</div>
+    <span class="admin-email" id="adminEmail"></span>
+    <button class="btn-logout" onclick="logout()">LOGOUT</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- FORM -->
+  <div class="form-panel">
+    <div class="panel-title">ADD PRODUCT<span>// fill form → hit submit</span></div>
+
+    <div class="fgroup">
+      <label>Product Name *</label>
+      <input type="text" id="f_name" placeholder="e.g. Screaming Cat Mug">
+    </div>
+
+    <div class="frow">
+      <div class="fgroup">
+        <label>Price ($) *</label>
+        <input type="number" id="f_price" placeholder="24" min="0" step="0.01">
+      </div>
+      <div class="fgroup">
+        <label>Badge</label>
+        <select id="f_badge">
+          <option value="">None</option>
+          <option value="NEW">NEW</option>
+          <option value="HOT">HOT</option>
+          <option value="SALE">SALE</option>
+          <option value="RARE">RARE</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <label>Type / Category *</label>
+      <input type="text" id="f_type" placeholder="tee, jewel, art, weird…">
+      <div class="fhint">becomes a filter pill on the site</div>
+    </div>
+
+    <!-- STORE DROPDOWN -->
+    <div class="fgroup">
+      <label>Store / Source *</label>
+      <select id="f_source_select" onchange="handleStoreChange()">
+        <option value="">— Select store —</option>
+        <option value="Amazon">Amazon</option>
+        <option value="Meesho">Meesho</option>
+        <option value="Etsy">Etsy</option>
+        <option value="Depop">Depop</option>
+        <option value="Grailed">Grailed</option>
+        <option value="Redbubble">Redbubble</option>
+        <option value="custom">✏️ Custom store…</option>
+      </select>
+      <div class="custom-store-wrap" id="customStoreWrap">
+        <label>Custom Store Name *</label>
+        <input type="text" id="f_source_custom" placeholder="Type store name…" oninput="updatePreview()">
+      </div>
+      <div class="fhint">becomes a source filter on the site</div>
+    </div>
+
+    <div class="fgroup">
+      <label>Affiliate Link *</label>
+      <input type="url" id="f_link" placeholder="https://your-affiliate-link.com">
+    </div>
+
+    <div class="fgroup">
+      <label>Image URL</label>
+      <input type="url" id="f_img" placeholder="https://… (leave blank to use emoji)" oninput="updatePreview()">
+      <div class="fhint">direct image URL — or leave blank to show emoji</div>
+    </div>
+
+    <div class="frow">
+      <div class="fgroup">
+        <label>Emoji (fallback)</label>
+        <input type="text" id="f_emoji" placeholder="🔥" maxlength="4" oninput="updatePreview()">
+      </div>
+      <div class="fgroup">
+        <label>Card Height (px)</label>
+        <input type="number" id="f_imgH" placeholder="220" min="120" max="400" value="220">
+        <div class="fhint">120–400, vary for masonry</div>
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <label>Quick Emoji Pick</label>
+      <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="preview-wrap">
+      <div class="preview-title">// CARD PREVIEW</div>
+      <div class="prev-card">
+        <div class="prev-ph" id="prev_ph">📦</div>
+        <div class="prev-body">
+          <div class="prev-type" id="prev_type">TYPE</div>
+          <div class="prev-name" id="prev_name">Product name…</div>
+          <div class="prev-row">
+            <div class="prev-price" id="prev_price">$0</div>
+            <div class="prev-src" id="prev_src">Store</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status" id="formStatus"></div>
+    <button class="btn-submit" id="submitBtn" onclick="submitProduct()">ADD TO WEIRDMART →</button>
+    <button class="btn-clear" onclick="clearForm()">CLEAR FORM</button>
+  </div>
+
+  <!-- PRODUCT LIST -->
+  <div class="list-panel">
+    <div class="list-header">
+      <div>
+        <div class="list-title">ALL PRODUCTS</div>
+        <div class="list-count" id="listCount">[loading…]</div>
+      </div>
+      <input type="text" class="list-search" id="listSearch" placeholder="filter list…" oninput="filterList()">
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="ptable">
+        <thead>
+          <tr>
+            <th></th><th>NAME</th><th>PRICE</th><th>TYPE</th>
+            <th>STORE</th><th>BADGE</th><th>DATE</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="productTbody">
+          <tr class="loading-row"><td colspan="8">// LOADING PRODUCTS //</td></tr>
+        </tbody>
+      </table>
+      <div class="empty-list" id="emptyList" style="display:none">// NO PRODUCTS YET — ADD ONE //</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   CONFIG — paste your Supabase values here
+═══════════════════════════════════════════════ */
+const SUPABASE_URL      = 'https://oiijtblwoqibhjcuijpn.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9paWp0Ymx3b3FpYmhqY3VpanBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NTc2ODUsImV4cCI6MjA5MDQzMzY4NX0.cTfjygKIZi9I_ybEALmzkltd1Zef9zZJ_tnuu_VS4Ro';
+
+/* ═══════ don't edit below ═══════ */
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let allProducts = [], deleteTarget = null;
+
+// ── CURSOR ──
+const cD=document.getElementById('cDot'),cR=document.getElementById('cRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cD.style.cssText+=`;left:${mx}px;top:${my}px`});
+(function af(){rx+=(mx-rx)*.13;ry+=(my-ry)*.13;cR.style.left=rx+'px';cR.style.top=ry+'px';requestAnimationFrame(af)})();
+document.addEventListener('mouseover',e=>{
+  const h=e.target.closest('a,button,input,select,textarea');
+  cR.style.width=cR.style.height=h?'52px':'34px';
+  cR.style.borderColor=h?'var(--red)':'var(--accent)';
+});
+
+// ── TOAST ──
+function toast(m,isErr=false){
+  const t=document.createElement('div');t.className='t';t.textContent=m;
+  if(isErr)t.style.borderColor='var(--red)',t.style.color='var(--red)';
+  document.getElementById('ts').appendChild(t);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('show')));
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),250)},2500);
+}
+
+// ── AUTH ──
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw    = document.getElementById('loginPw').value;
+  const err   = document.getElementById('loginErr');
+  const btn   = document.getElementById('loginBtn');
+  btn.disabled=true; btn.textContent='// CHECKING…';
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if(error){
+    err.textContent='// '+error.message.toUpperCase()+' //';
+    err.style.display='block';
+    document.getElementById('loginPw').value='';
+    btn.disabled=false; btn.textContent='ENTER ADMIN →';
+    setTimeout(()=>err.style.display='none',3000);
+  }
+  // onAuthStateChange handles success
+}
+document.getElementById('loginPw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('loginEmail').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPw').focus();});
+
+async function logout(){ await sb.auth.signOut(); location.reload(); }
+
+// Fires on page load (restores session) AND on login/logout
+sb.auth.onAuthStateChange((event, session)=>{
+  if(session){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('adminEmail').textContent=session.user.email;
+    loadProducts();
+  } else {
+    document.getElementById('loginScreen').style.display='flex';
+  }
+});
+
+// ── STORE DROPDOWN ──
+function handleStoreChange(){
+  const val=document.getElementById('f_source_select').value;
+  const wrap=document.getElementById('customStoreWrap');
+  if(val==='custom'){
+    wrap.classList.add('show');
+    document.getElementById('f_source_custom').focus();
+  } else {
+    wrap.classList.remove('show');
+    document.getElementById('f_source_custom').value='';
+  }
+  updatePreview();
+}
+
+function getSource(){
+  const sel=document.getElementById('f_source_select').value;
+  if(sel==='custom') return document.getElementById('f_source_custom').value.trim();
+  return sel;
+}
+
+// ── LOAD PRODUCTS ──
+async function loadProducts(){
+  const {data,error}=await sb.from('products').select('*').order('date',{ascending:false});
+  if(error){
+    document.getElementById('productTbody').innerHTML=
+      `<tr class="loading-row"><td colspan="8" style="color:var(--red)">// ERROR: ${error.message} //</td></tr>`;
+    return;
+  }
+  allProducts=data;
+  renderList(allProducts);
+}
+
+// ── RENDER LIST ──
+function renderList(products){
+  const tbody=document.getElementById('productTbody');
+  const empty=document.getElementById('emptyList');
+  document.getElementById('listCount').textContent=`[${products.length} ITEMS]`;
+  if(!products.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=products.map(p=>`
+    <tr>
+      <td class="td-emoji">${p.emoji||'📦'}</td>
+      <td class="td-name">${p.name}</td>
+      <td class="td-price">$${p.price}</td>
+      <td class="td-type">${p.type}</td>
+      <td class="td-src">${p.source}</td>
+      <td>${p.badge?`<span class="td-badge">${p.badge}</span>`:'<span style="color:var(--border)">—</span>'}</td>
+      <td style="color:var(--muted);font-size:.68rem;">${p.date||'—'}</td>
+      <td><button class="btn-del" onclick="confirmDelete(${p.id},'${p.name.replace(/'/g,"\\'")}')">DELETE</button></td>
+    </tr>`).join('');
+}
+
+// ── FILTER ──
+function filterList(){
+  const q=document.getElementById('listSearch').value.toLowerCase().trim();
+  if(!q){renderList(allProducts);return;}
+  renderList(allProducts.filter(p=>
+    p.name.toLowerCase().includes(q)||p.type.toLowerCase().includes(q)||p.source.toLowerCase().includes(q)
+  ));
+}
+
+// ── SUBMIT ──
+async function submitProduct(){
+  const name  =document.getElementById('f_name').value.trim();
+  const price =parseFloat(document.getElementById('f_price').value);
+  const type  =document.getElementById('f_type').value.trim().toLowerCase();
+  const source=getSource();
+  const link  =document.getElementById('f_link').value.trim();
+  const img   =document.getElementById('f_img').value.trim();
+  const emoji =document.getElementById('f_emoji').value.trim()||'📦';
+  const imgH  =parseInt(document.getElementById('f_imgH').value)||220;
+  const badge =document.getElementById('f_badge').value;
+
+  if(!name||isNaN(price)||!type||!source||!link){showStatus('// Fill all required fields //',true);return;}
+  if(!link.startsWith('http')){showStatus('// Link must start with https:// //',true);return;}
+
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;btn.textContent='// SAVING…';
+
+  const today=new Date().toISOString().split('T')[0];
+  const {data,error}=await sb.from('products')
+    .insert([{name,price,type,source,link,img,emoji,img_height:imgH,badge,date:today}])
+    .select();
+
+  if(error){
+    showStatus(`// ERROR: ${error.message} //`,true);
+    toast('// Save failed //',true);
+  } else {
+    allProducts.unshift(data[0]);
+    renderList(allProducts);
+    clearForm();
+    showStatus(`// ✓ "${name}" added! //`,false);
+    toast('✓ Product added!');
+  }
+  btn.disabled=false;btn.textContent='ADD TO WEIRDMART →';
+}
+
+// ── DELETE ──
+function confirmDelete(id,name){
+  deleteTarget=id;
+  document.getElementById('delModalBody').textContent=`Delete "${name}"? This cannot be undone.`;
+  document.getElementById('delModal').classList.add('open');
+  document.getElementById('delConfirmBtn').onclick=()=>doDelete(id,name);
+}
+function closeModal(){document.getElementById('delModal').classList.remove('open');deleteTarget=null;}
+async function doDelete(id,name){
+  closeModal();
+  const {error}=await sb.from('products').delete().eq('id',id);
+  if(error){toast(`// Delete failed: ${error.message} //`,true);return;}
+  allProducts=allProducts.filter(p=>p.id!==id);
+  renderList(allProducts);
+  toast(`✓ "${name}" deleted`);
+}
+
+// ── HELPERS ──
+function showStatus(msg,isErr){
+  const s=document.getElementById('formStatus');
+  s.textContent=msg;s.className='status '+(isErr?'err':'ok');s.style.display='block';
+  setTimeout(()=>s.style.display='none',3500);
+}
+
+function clearForm(){
+  ['f_name','f_price','f_type','f_link','f_img','f_emoji'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f_imgH').value='220';
+  document.getElementById('f_badge').value='';
+  document.getElementById('f_source_select').value='';
+  document.getElementById('f_source_custom').value='';
+  document.getElementById('customStoreWrap').classList.remove('show');
+  document.querySelectorAll('.emoji-btn').forEach(b=>b.classList.remove('picked'));
+  updatePreview();
+}
+
+// ── LIVE PREVIEW ──
+function updatePreview(){
+  const name  =document.getElementById('f_name').value||'Product name…';
+  const price =document.getElementById('f_price').value||'0';
+  const type  =document.getElementById('f_type').value||'TYPE';
+  const source=getSource()||'Store';
+  const emoji =document.getElementById('f_emoji').value||'📦';
+  const img   =document.getElementById('f_img').value;
+
+  document.getElementById('prev_name').textContent =name;
+  document.getElementById('prev_price').textContent=`$${price}`;
+  document.getElementById('prev_type').textContent =type.toUpperCase();
+  document.getElementById('prev_src').textContent  =source;
+
+  const ph=document.getElementById('prev_ph');
+  if(img){ph.innerHTML=`<img src="${img}" style="width:100%;height:120px;object-fit:cover;" onerror="this.parentNode.textContent='${emoji}'">`;}
+  else{ph.textContent=emoji;}
+}
+['f_name','f_price','f_type'].forEach(id=>document.getElementById(id).addEventListener('input',updatePreview));
+
+// ── EMOJI PICKER ──
+const EMOJIS=['🔥','💀','👁️','🖤','💚','🧡','🤍','❤️','💜','💛','🐍','🦇','🕷️','🌑','⚡','💎','🔮','🗡️','🌹','🥩','🐴','🐐','🧅','🦴','📟','📺','🖼️','💍','🐱','🐙','🦋','🌿','🍄','🔑','⚙️','📦','🎭','🎪','🃏','🎲'];
+const eg=document.getElementById('emojiGrid');
+EMOJIS.forEach(em=>{
+  const b=document.createElement('button');b.className='emoji-btn';b.textContent=em;
+  b.onclick=()=>{
+    document.getElementById('f_emoji').value=em;
+    document.querySelectorAll('.emoji-btn').forEach(x=>x.classList.remove('picked'));
+    b.classList.add('picked');updatePreview();
+  };
+  eg.appendChild(b);
+});
+</script>
+</body>
+</html>
